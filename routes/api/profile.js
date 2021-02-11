@@ -7,6 +7,7 @@ const { check, validationResult } = require('express-validator');
 
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
+const Post = require('../../models/Post');
 
 // @route   GET api/profile/me
 // @desc    Get current users profile
@@ -52,7 +53,7 @@ router.post('/', [auth, [
     } = req.body
 
     const proFileFields = {};
-    proFileFields.user = requ.user.id;
+    proFileFields.user = req.user.id;
     if(company) proFileFields.company = company;
     if(website) proFileFields.website = website;
     if(location) proFileFields.location = location;
@@ -107,13 +108,13 @@ router.get('/', async (req, res) => {
 // @desc    Get profile by user id
 // @access  Public
 
-router.get('/users/:user_id', async (req, res) => {
+router.get('/user/:user_id', async (req, res) => {
     try {
         const profile = await Profile.findOne({ user: req.params.user_id }).populate('user', ['name', 'avatar']);
 
         if(!profile) return res.status(400).json({ msg: 'Profile not found' });
 
-        res.json(profiles);
+        res.json(profile);
     } catch (error) {
         console.error(error.message);
         if(error.kind == 'ObjectId'){
@@ -129,6 +130,7 @@ router.get('/users/:user_id', async (req, res) => {
 
 router.delete('/', auth, async (req, res) => {
     try {
+        await Post.deleteMany({ user: req.user.id });
         await Profile.findOneAndRemove({ user: req.user.id });
         await User.findOneAndRemove({ _id: req.user.id });
         res.json({ msg: 'User deleted' });
